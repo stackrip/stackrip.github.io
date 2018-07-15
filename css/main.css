@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css?family=Source+Code+Pro');
-@import url('https://fonts.googleapis.com/css?family=Roboto:300,500,700');
+@import url('https://fonts.googleapis.com/css?family=Roboto:100,500');
+
 
 html, body {
   display: flex;
@@ -33,12 +34,12 @@ article {
 }
 
 header > a > h1 {
-  font-weight: 300;
+  font-weight: 100;
   color: #fff;
   text-align: center;
   font-size: 1.23em;
 }
-header > h1 > b { font-weight: 700; }
+header > h1 > b { font-weight: 500; }
 
 h1, h2, h3, h4, h5 {
   font-family: "Roboto", "Helvetica", "DejaVu Sans", "Arial", sans-serif;
