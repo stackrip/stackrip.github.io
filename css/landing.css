@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css?family=Source+Code+Pro');
+
+
+html, body {
+  width: 100vw;
+  min-height: 100vh;
+  overflow: none;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background-color: #141d26;
+  color: #c5c8c6;
+  font-family: "Source Code Pro", "Menlo", "Courier New", Courier, monospace;
+  font-size: 1.1em;
+  font-weight: 300;
+  letter-spacing: -.003em;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  flex: 1;
+}
+
+.centerbox {
+  display: flex;
+  width: 400px;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.links {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin: 16px 0;
+  width: 100%;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+  order: 2;
+  margin-left: auto;
+}
+
+.footerLinks {
+  font-size: .7em;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+  width: 220px;
+  max-width: 100%;
+  right: 0;
+}
+
+a, a:visited, a:hover {
+  color: #EC407A;
+  text-decoration: none;
+}
+
+.footer a {
+  text-decoration: underline;
+  color: #c5c8c6;
+}
