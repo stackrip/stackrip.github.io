@@ -47,7 +47,6 @@ header > a > img {
 h1, h2, h3, h4, h5 {
   font-family: "Roboto", "Helvetica", "DejaVu Sans", "Arial", sans-serif;
   letter-spacing: .015em;
-  text-transform: uppercase;
   font-weight: 300;
   color: #EC407A;
   padding-top: 5px;
@@ -55,9 +54,9 @@ h1, h2, h3, h4, h5 {
   padding: 0;
 }
 
-h1 { font-size: 2em; line-height: 1.04; }
-h2 { font-size: 1.5em; line-height: 1; }
-h3, h4, h5 { font-size: 1.2em; line-height: 1; }
+h1 { font-size: 1.4em; line-height: 1.04; }
+h2 { font-size: 1.2em; line-height: 1; }
+h3, h4, h5 { font-size: 1.1em; line-height: 1; }
 
 a, a:VISITED { color: #EC407A; text-decoration: none; }
 a:HOVER { text-decoration: underline; }
