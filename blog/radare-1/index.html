@@ -1,0 +1,204 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Blog Posts - Reverse Engineering, Malware, Radare |  @stackrip</title>
+  <meta name="description" content="stackrip blog | Reverse engineering, security and stuff. Radare2 user, CTF noob, golang enjoyer.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="stylesheet" href="https://stackrip.com/css/normalize.css">
+  <link rel="stylesheet" href="https://stackrip.com/css/main.css">
+  <link rel="stylesheet" href="https://stackrip.com/css/prism.css">
+</head>
+
+<body>
+  <header>
+    <a href="https://stackrip.com"><img width="125px" height="27px" src="https://stackrip.com/img/logo.png" alt="stackrip"></a>
+  </header>
+  <article>
+<h1>A Practical Introduction to Radare2 - Static Analysis</h1>
+
+<p>
+This article will focus on analysis of a Linux executable file using Radare2.
+Even if you're not on Linux you can still analyze ELF binaries using radare2.
+The best way to install radare2 is from source at
+<a href="https://github.com/radare/radare2" title="Radare2">github.com/radare/radare2</a>
+</p>
+
+<p>
+The executable we are looking at is not especially difficult to crack as this
+post is focused on different approaches for analyzing binaries using radare2 as
+opposed to the challenge of the binary itself. We will be focusing on the
+starter stackrip binary
+<a href="https://github.com/stackrip/challenges/tree/master/0000-unlockme/linux">x86-0000-unlockme</a>.</p>
+
+<p>
+This is an x86 ELF binary which produces the following output when run:
+<img src="/run.png" alt="Stackrip Executable Running" title="Stackrip Executable Running">
+</p>
+
+<p>
+The binary asks for a password and will exit with a failure status when an
+invalid input is provided. Right off the bat the binary suggests using the
+<code inline>rabin2</code>, radare's binary examination tool with the <code inline>-z</code> flag which prints all
+human readable strings from the data section of the binary.
+<pre><code class="language-">
+sr :: challenges/0000-unlockme/linux ‹master*› % rabin2 -z ./x86-0000-unlockme                                                     1 ↵
+000 0x000008b0 0x080488b0  22  23 (.rodata) ascii this_is_not_a_password
+001 0x000008c8 0x080488c8  32  33 (.rodata) ascii Hello.\nI have a flag for you...\n
+002 0x000008ec 0x080488ec  71  72 (.rodata) ascii Unfortunately before I can give you it, you must give something to me.\n
+003 0x00000934 0x08048934  35  36 (.rodata) ascii Do you have what I'm looking for?\n\n
+004 0x0000095c 0x0804895c  47  48 (.rodata) ascii Good job. I believe this is what you came for:\n
+005 0x0000098c 0x0804898c  51  52 (.rodata) ascii Hmm. I don't think this is what I was looking for.\n
+006 0x000009c0 0x080489c0  36  37 (.rodata) ascii Take a look inside of me. rabin2 -z\n
+</code></pre>
+</p>
+
+<p>
+There's no flag provided in the data section, but we can now see the success
+message and a new string <i>"this_is_not_a_password"</i>. We can further analyze this
+file using the <code inline>rabin2 -I</code> command which provides a lot of metadata around the
+security and structure of the file.
+<pre><code class="language-">
+sr :: challenges/0000-unlockme/linux ‹master*› % rabin2 -I ./x86-0000-unlockme                                                     1 ↵
+arch     x86
+binsz    6621
+bintype  elf
+bits     32
+canary   false
+class    ELF32
+crypto   false
+endian   little
+havecode true
+intrp    /lib/ld-linux.so.2
+lang     c
+linenum  true
+lsyms    true
+machine  Intel 80386
+maxopsz  16
+minopsz  1
+nx       true
+os       linux
+pcalign  0
+pic      false
+relocs   true
+relro    partial
+rpath    NONE
+static   false
+stripped false
+subsys   linux
+va       true
+</code></pre>
+</p>
+
+<p>
+Running rabin2 tells us this is an x86 binary with no stack canary and the "nx"
+or no-execute bit is enabled. There is also no position independence set on
+this executable. A key takeaway here is that symbols are not stripped which is
+helpful for static analysis.
+</p>
+
+<p>
+We can prepare the binary for static analysis by running <code inline>r2 -AA ./x86-0000-unlockme</code>
+which will open up radare2 and perform some basic analysis over the code.
+</p>
+
+<p>
+We can list the functions used by the binary using the <code inline>afl</code> or "analyze
+function list" command.
+<pre><code class="language-">
+0x08048438    3 35           sym._init
+0x08048470    1 6            sym.imp.setbuf
+0x08048480    1 6            sym.imp.strcmp
+0x08048490    1 6            sym.imp.printf
+0x080484a0    1 6            sym.imp.free
+0x080484b0    1 6            sym.imp.fgets
+0x080484c0    1 6            sym.imp.sleep
+0x080484d0    1 6            sym.imp.usleep
+0x080484e0    1 6            sym.imp.malloc
+0x080484f0    1 6            sym.imp.puts
+0x08048500    1 6            sym.imp.strlen
+0x08048510    1 6            sym.imp.__libc_start_main
+0x08048520    1 6            sym.imp.putchar
+0x08048530    1 6            sub.__gmon_start_530
+0x08048540    1 33           entry0
+0x08048570    1 4            sym.__x86.get_pc_thunk.bx
+0x08048580    4 43           sym.deregister_tm_clones
+0x080485b0    4 53           sym.register_tm_clones
+0x080485f0    3 30           sym.__do_global_dtors_aux
+0x08048610    4 43   -> 40   entry1.init
+0x0804863b    4 104          main
+0x080486a3    4 91           sym.print_intro
+0x080486fe    4 80           sym.slow_type
+0x0804874e    4 125          sym.check_password
+0x080487cb    1 93           sym.print_flag
+0x08048830    4 93           sym.__libc_csu_init
+0x08048890    1 2            sym.__libc_csu_fini
+0x08048894    1 20           sym._fini
+</code></pre>
+</p>
+
+<p>
+Right away we see the <code inline>sym.check_password</code> and <code inline>sym.print_flag</code> functions. Both
+of which are obvious and certainly helpful, but we came here to learn not to
+win. To avoid spoilers we will seek to the main function and try to determine
+the flow of the application. We can seek to the main method in radare using the
+<code inline>s main</code> command. We can see the disassembly of this function using the <code inline>pdf</code>
+or "print disassembly of function" command.
+<img src="/assembly.png" alt="Stackrip binary assembly" title="Stackrip binary assembly">
+</p>
+
+<p>
+The function calls <code inline>sym.print_intro</code> which we can safely assume prints the
+intro then calls <code inline>sym.check_password</code> and tests the return value of that
+function. If it is zero we jump to the failure output we initially saw when we
+ran this program. If it is not zero, we continue to the next line which says
+good job and calls the <code inline>sym.print_flag</code> function.
+</p>
+
+<p>
+Our next step is to seek to this <code inline>sym.check_password</code> function and see what's
+going on there using <code inline>s sym.check_password</code> and <code inline>pdf</code>.
+<img src="/assembly.png" alt="Stackrip password check binary assembly" title="Stackrip password check binary assembly">
+</p>
+
+<p>
+This function calls fgets to read user input, calls strlen and uses the return
+value of strlen offset by <code inline>ebx - 0x107</code> (the same value we pushed as the buffer
+for fgets) and replaces that value with 0. This appears to replace the final
+character of our fgets string, which is the newline character with a <code inline>`\0`</code>.
+Finally we call strcmp against our newly stripped buffer and a reference to an
+object called "the_password". Radare helpfully displays the ascii
+representation of that value and we can see it is the string from earlier
+"this_is_not_a_password". I'm starting to suspect this may be the password.
+</p>
+
+<p>
+Finally, the function checks if the result of strcmp is 0. If it isn't, we will
+set <code inline>eax</code> to 0 and <code inline>ret</code> otherwise we set <code inline>eax</code> to 1 and <code inline>ret</code>. As we saw earlier
+in our main method the goal here is to have this function set our <code inline>eax</code>
+register to 1. This proves without a doubt the password is
+"this_is_not_a_password".
+</p>
+
+<p>
+Running the binary with the new password flag confirms this is true.
+<img src="/solution.png" alt="Stackrip binary crackme solution" title="Stackrip binary crackme solution">
+</p>
+
+<p>
+We've already beaten this trivial crackme but let's take a look at how the flag
+is provided for extra credit. If we seek to sym.print_flag we can see this
+function calls malloc with a 255 byte buffer. It then starts manually moving
+characters onto this buffer dword by dword. Each chunk provides a subset of our
+flag. Finally it pushes the address onto the stack and calls puts. The function
+will free the pointer and return.
+<img src="/printflag.png" alt="Stackrip print flag dissasembly" title="Stackrip print flag disassembly">
+</p>
+  </article>
+  <script src="https://stackrip.com/js/prism.js"></script>
+  <script src="https://stackrip.com/js/main.js"></script>
+</body>
+
+</html>

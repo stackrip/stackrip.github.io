@@ -96,5 +96,11 @@ pre > code {
 
 ::selection { background: #EC407A; }
 ::-moz-selection { background: #EC407A; }
+code[inline] {
+    font-size: .77em;
+    -webkit-border-radius: 5px;
+    border: 1px solid #888;
+    padding: 2px;
+}
 
 /* Responsive bullshit */
